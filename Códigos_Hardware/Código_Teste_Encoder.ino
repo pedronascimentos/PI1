@@ -1,23 +1,43 @@
-// Pino conectado ao D0 do FC-03
-int sensorPin = 19;   
-int estadoSensor = 0;
-int a=0, furos = 20;
+int sensorPin = 19;
+volatile int pulsos = 0;
+unsigned long tempoAnterior = 0;
+float diametroRoda = 0.065; // 6,5 cm de diâmetro
+int furos = 20; // número de furos no disco
+
+void IRAM_ATTR contarPulso() {
+  pulsos++;
+}
 
 void setup() {
   Serial.begin(115200);
-  pinMode(sensorPin, INPUT);
+  pinMode(sensorPin, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(sensorPin), contarPulso, RISING);
 }
 
 void loop() {
-  estadoSensor = digitalRead(sensorPin);
-  
-  if (estadoSensor == HIGH) {
-    a++;
-    Serial.println("Vibração detectada!");
-    Serial.println(a);
-  } else {
-    Serial.println("Sem vibração.");
-  }
+  unsigned long tempoAtual = millis();
 
-  delay(300);
+  if (tempoAtual - tempoAnterior >= 1000) { // a cada 1 segundo
+    noInterrupts();
+    int contagem = pulsos;
+    pulsos = 0;
+    interrupts();
+
+    // Calcular rotações por segundo
+    float rps = contagem / (float)furos;  
+    float rpm = rps * 60.0;
+
+    // Circunferência da roda
+    float circunferencia = 3.1416 * diametroRoda;
+
+    // Velocidade em m/s = rps * circunferência
+    float velocidade_ms = rps * circunferencia;
+
+
+    Serial.print("Velocidade: ");
+    Serial.print(velocidade_ms, 2);
+    Serial.println(" m/s");
+
+    tempoAnterior = tempoAtual;
+  }
 }
