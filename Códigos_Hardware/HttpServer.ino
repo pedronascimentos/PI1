@@ -22,7 +22,7 @@ void girar(int direction) {
 
 static int preciseDistance = 10;
 void handleInstructions(StaticJsonDocument<512> payload) {
-  JsonArray instructions = payload["data"].as<JsonArray>();
+  JsonArray instructions = payload.as<JsonArray>();
   for(auto instruction : instructions) {
     String action = instruction["action"].as<String>();
     int value = instruction["value"].as<int>();  
